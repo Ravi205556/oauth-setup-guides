@@ -27,3 +27,7 @@ Shareable guides on how hard it is to create an OAuth app with a given provider 
 - On 27 Oct 2026 the xAI key returned 403 because the new team had no credits. The Grok path therefore has **not run end to end yet**. Local tests fell back to Gemini without live search, so tags were capped at "inferred".
 - Some docs, such as shopify.dev, are rendered with JavaScript, so the dead-link and verification fetches can't read their content.
 - Guides are not human-reviewed.
+
+## Live backend
+
+The live "type any app" agent is deployed on Vercel (Hobby) at `https://oauth-setup-guides-gamma.vercel.app/api/generate` (POST `{"app":"Name"}`). The GitHub Pages site calls it via `config.js`. It currently runs on Gemini without live search (search quota unavailable on the free tier), so generated guides are labelled "no live search" and claims are capped at inferred/unverified.
