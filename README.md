@@ -3,7 +3,7 @@
 Shareable guides on how hard it is to create and get approval for an OAuth app with a given provider. Built for the Composio APM (Integrations) take-home. See `WRITEUP.md`.
 
 - Static site: `public/` (mirrored to `docs/` for GitHub Pages): https://ravi205556.github.io/oauth-setup-guides/
-- Live generation: `api/generate.js`, a Vercel function using **Google Gemini** (`gemini-2.5-flash`) with Google Search grounding.
+- Live generation: `api/generate.js`, a Vercel function using **Google Gemini** (`gemini-3.5-flash-lite`, falling back to other flash models) with Google Search grounding. If the key has no grounding quota (common on the free tier), it retries without search, caps every tag at "inferred", and drops cited URLs that 404.
 
 ## Deploy the backend on Vercel
 1. Get a key at https://aistudio.google.com (Get API key).
