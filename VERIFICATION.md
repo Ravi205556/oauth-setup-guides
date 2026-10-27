@@ -13,6 +13,8 @@ Checked on 27 Oct 2026 by fetching the official pages listed below. **No OAuth a
 | 7 | Shopify: "app review typically takes 3 to 5 business days" (generated guide) | **Could not verify.** The shopify.dev review-process page is rendered with JavaScript, and my fetch couldn't read it. Treat the figure as unverified. | https://shopify.dev/docs/apps/launch/app-store-review/review-process |
 | 8 | "Composio manages the OAuth app" (earlier runs said yes for *every* app) | **Corrected.** This was a model guess. The server now reads Composio's list. Dropbox and Typeform are under "Composio-managed OAuth available", and Shopify is under "Bring your own OAuth app". | https://docs.composio.dev/toolkits/managed-auth.md |
 | 9 | Model-remembered source URLs | **Corrected.** In the first Gemini run, 3 of 6 remembered URLs returned 404. They are now checked and dropped automatically, and their claims become "unverified". | — |
+| 10 | Deployed backend, Calendly (unfamiliar app, called from the github.io origin): "Composio-managed: Yes" | **Confirmed.** Calendly is under "Composio-managed OAuth available". The approval estimate stays labelled unverified (no live search). | https://docs.composio.dev/toolkits/managed-auth.md |
+| 11 | Deployed backend, Xero: "Composio-managed: No, bring your own app" | **Confirmed.** Xero is under "Bring your own OAuth app". Approval estimate "1-3 business days" is unverified. | same as above |
 
 ## What I learned
 - Review times are rarely published. The honest answer is "not published", plus a clearly labelled estimate.

@@ -8,7 +8,17 @@ Shareable guides on how hard it is to create an OAuth app with a given provider 
   - **Fallback:** Google Gemini (`GEMINI_API_KEY`). It tries Google Search grounding first, then answers without search.
   - **Composio-managed status** is never model-generated. The server parses https://docs.composio.dev/toolkits/managed-auth.md and answers Yes, No or Unverified.
 
+## Links
+- Live site: https://ravi205556.github.io/oauth-setup-guides/
+- Live backend: https://oauth-setup-guides-gamma.vercel.app/api/generate (POST `{"app":"Name"}`)
+- Verification log: https://ravi205556.github.io/oauth-setup-guides/verification.html
+
+## What's in it
+- **Library: 6 hand-checked guides** chosen for different approval patterns: GitHub (no review), Slack (optional Marketplace review), Notion, Zoom (mandatory review), Google restricted scopes (annual security assessment), LinkedIn (gated partner products). The brief's goal is 100; I chose depth and sourcing over count (see Key decisions).
+- **Live "type any app"**: an app name not in the library is sent to the backend, which generates a guide in a few seconds and gives it a share link (`#/guide/live-<app>`).
+
 ## Setup
+0. Run locally: `npx vercel dev` from the repo root with keys in `.env.local` (git-ignored), or just open `public/index.html` for the library only.
 1. Get keys: xAI at https://console.x.ai (the team needs credits), and optionally Gemini at https://aistudio.google.com.
 2. Import this repo on vercel.com, or run `npx vercel --prod`. The output dir is `public` (see `vercel.json`).
 3. Under Settings → Environment Variables, set `XAI_API_KEY` and optionally `GEMINI_API_KEY`, `XAI_MODEL`, `GEMINI_MODEL` and `ALLOW_ORIGIN`. Then redeploy. **Keys live only in Vercel env vars. They are never in this repo.**
@@ -22,6 +32,8 @@ Shareable guides on how hard it is to create an OAuth app with a given provider 
 - The server enforces a ~50 s provider budget (Vercel limit 60 s) and has CORS enabled. With no key configured it returns 503, and the UI never shows a made-up guide.
 
 ## Limitations
+- **Live search is currently OFF on the deployed backend.** It needs a search-capable key: xAI with credits (Grok `web_search`) or a Gemini project with grounding quota/billing. Without one, guides come from model memory and are labelled "no live search"; claims are capped at inferred/unverified.
+- Only 6 library guides, not 100. Live-generated guides are kept only in the browser session, so their share links don't work in another browser.
 - **No-search mode (Gemini fallback without grounding):** guides come from model memory. The server post-processes them: approval always reads "Approval time not verified (no live search)"; any time figure is labelled "unverified model estimate (no live search)" and provider-attribution phrasing ("X states...", "according to...") is stripped; any cited URL that does not return HTTP 2xx/3xx when fetched is dropped, and claims without a checked URL are tagged unverified. Tested locally with Miro and Shopify (no xAI key).
 - **No OAuth app was created on any real provider.** Everything is checked against docs only. "Tested" here means the pipeline ran, not that a setup was attempted.
 - On 27 Oct 2026 the xAI key returned 403 because the new team had no credits. The Grok path therefore has **not run end to end yet**. Local tests fell back to Gemini without live search, so tags were capped at "inferred".
