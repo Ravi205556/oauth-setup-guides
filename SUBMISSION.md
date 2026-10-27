@@ -20,7 +20,7 @@ I built a small web app where a developer looks up an app and gets a shareable g
 - Trust over completeness: "sourced" requires a URL the search tool actually returned, and dead cited links are dropped automatically.
 - I chose a small, varied, checked library over 100 unchecked guides.
 
-**How I checked the guidance:** I checked 11 claims against official docs. 6 were confirmed, 3 corrected (a wrong cited page, the model claiming every app was Composio-managed, and dead remembered URLs) and 2 could not be verified (Dropbox and Shopify review times). Details are in VERIFICATION.md.
+**How I checked the guidance:** I checked 11 claims against official docs. 5 were confirmed, 3 corrected (a wrong cited page, the model claiming every app was Composio-managed, and dead remembered URLs) and 3 could not be verified (Dropbox and Shopify review times, and a Dropbox user cap that I removed). Details are in VERIFICATION.md.
 
 **Limitations:**
 - The deployed backend currently runs without live web search. Both of my free keys lacked search quota (xAI had no credits and Gemini's grounding quota was unavailable). Generated guides come from model memory, are labelled "no live search", and their claims are capped at inferred or unverified. Adding a search-capable key turns live search on with no code change.
