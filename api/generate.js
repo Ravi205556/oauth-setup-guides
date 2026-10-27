@@ -85,8 +85,10 @@ module.exports=async(req,res)=>{
  let out=await callXai(prompt,t0);const errs=[];
  if(out.err){errs.push(out.err);out=await callGemini(prompt,t0)}
  if(out.err){errs.push(out.err);return res.status(502).json({error:'All providers failed: '+errs.join(' | ')})}
- let g;const text=out.text||'';
- try{g=JSON.parse(text.slice(text.indexOf('{'),text.lastIndexOf('}')+1))}catch(e){return res.status(502).json({error:'Agent returned unparseable output'})}
+ let g;const parse=t=>{t=t||'';try{const o=JSON.parse(t.slice(t.indexOf('{'),t.lastIndexOf('}')+1));return o&&typeof o==='object'&&Array.isArray(o.steps)&&Array.isArray(o.reqs)?o:null}catch(e){return null}};
+ g=parse(out.text);
+ for(let r=0;!g&&r<2&&Date.now()-t0<35000;r++){const o2=await callGemini(prompt,t0);if(!o2.err){out=o2;g=parse(o2.text)}}
+ if(!g)return res.status(502).json({error:'The model returned an unreadable guide twice. Please click Generate again.'});
  g.sources=g.sources&&typeof g.sources==='object'?g.sources:{};
  for(const[id,u]of Object.entries(g.sources))if(!/^https?:\/\//.test(String(u)))delete g.sources[id];
  // Drop cited URLs that do not resolve; their claims become unverified.
