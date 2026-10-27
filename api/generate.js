@@ -23,6 +23,7 @@ Rules:
 - "setup" and "approval": give CONCRETE time estimates only when a source states them, quoting the figure (e.g. "Shopify states app review takes 5-7 business days"). If no source publishes a figure, write "not published" and optionally add your rough estimate explicitly labelled "estimate".
 - Do NOT state whether Composio manages an OAuth app for this service; leave "composio" as "" (the server fills it from Composio's docs).
 - Put the URL of every page you rely on in "sources" (only URLs you actually opened or got from search). Tag a claim "sourced" only if that source states it, "inferred" if reasoned from sources, else "unverified" with sourceId null. Never invent review times, URLs or numbers.
+- If you could NOT run a live web search, you MUST write "approval" as "Approval time not verified (no live search)" plus at most a rough figure labelled "unverified estimate"; never write that the provider "states", "says" or "documents" any duration, and tag every claim "unverified" unless you are certain of the exact URL.
 - Keep 4-8 steps and 2-6 reqs, each one concise and specific. ${SCHEMA_HINT}`}
 
 // --- xAI Grok (Responses API) ---
@@ -58,6 +59,21 @@ async function callGemini(prompt,t0){
   return{text,cites,searched:s&&cites.length>0,label:`Gemini ${m}${s?' + Google Search':', NO live search'}`};}
  return{err:'Gemini '+last}}
 
+// --- No-search honesty post-processing ---
+const NS='unverified model estimate (no live search)';
+const TIME=/\b\d+(?:[.,]\d+)?(?:\s*(?:-|–|to)\s*\d+)?\+?\s*(?:business\s+|working\s+|calendar\s+)?(?:minutes?|mins?|hours?|hrs?|days?|weeks?|months?)\b/i;
+const ATTRIB=/\b(?:[A-Z][\w.&'-]*(?:\s+[A-Z][\w.&'-]*)*\s+)?(?:officially\s+|publicly\s+)?(?:states?|says|notes|documents|publishes|confirms|indicates|advertises|specifies|mentions)(?:\s+that)?\s+/g;
+const ACC=/\b(?:according to|per|as stated (?:by|in)|as documented (?:by|in))\s+[^,.;]+[,;]?\s*/gi;
+function deAttribute(t){return String(t).replace(ACC,'').replace(ATTRIB,'').replace(/^\s*([a-z])/,c=>c.toUpperCase()).trim()}
+function noSearchScrub(g){
+ const ap=String(g.approval||'');
+ g.approval=TIME.test(ap)?`Approval time not verified (no live search). Unverified model estimate: ${deAttribute(ap)}`:(/not verified/i.test(ap)?ap:`Approval time not verified (no live search).${ap?' '+deAttribute(ap):''}`);
+ const st=String(g.setup||'');if(TIME.test(st))g.setup=`${NS}: ${deAttribute(st)}`;
+ for(const k of ['steps','reqs'])g[k]=g[k].map(([t,s,tag])=>{
+  if(TIME.test(t)||ATTRIB.test(t)||ACC.test(t)){ATTRIB.lastIndex=0;ACC.lastIndex=0;return[`${deAttribute(t)} [${NS}]`,s,'unverified']}
+  ATTRIB.lastIndex=0;ACC.lastIndex=0;return[t,s,s?tag:'unverified']});
+ g.noLiveSearch=true;}
+
 module.exports=async(req,res)=>{
  cors(res);
  if(req.method==='OPTIONS')return res.status(204).end();
@@ -74,7 +90,9 @@ module.exports=async(req,res)=>{
  g.sources=g.sources&&typeof g.sources==='object'?g.sources:{};
  for(const[id,u]of Object.entries(g.sources))if(!/^https?:\/\//.test(String(u)))delete g.sources[id];
  // Drop cited URLs that do not resolve; their claims become unverified.
- const dead=[];await Promise.all(Object.entries(g.sources).map(async([id,u])=>{try{const x=await fetch(u,{redirect:'follow',headers:{'User-Agent':'Mozilla/5.0'},signal:AbortSignal.timeout(4000)});if(x.status===404||x.status===410){dead.push(u);delete g.sources[id]}}catch(e){}}));
+ // In no-search mode a URL counts only if it was actually fetched with a 2xx/3xx; unreachable or blocked URLs are dropped too.
+ const dead=[];await Promise.all(Object.entries(g.sources).map(async([id,u])=>{let st=0;try{const x=await fetch(u,{redirect:'follow',headers:{'User-Agent':'Mozilla/5.0'},signal:AbortSignal.timeout(4000)});st=x.status}catch(e){}
+  if(st===404||st===410||(!out.searched&&!(st>=200&&st<400))){dead.push(u+(st?` (HTTP ${st})`:' (unreachable)'));delete g.sources[id]}}));
  if(dead.length)g.droppedSources=dead;
  const cited=new Set(out.cites.map(normUrl));
  const live=id=>out.searched&&g.sources[id]&&cited.has(normUrl(g.sources[id]));
@@ -82,6 +100,7 @@ module.exports=async(req,res)=>{
   if(!(s&&g.sources[s]))return[t,null,tag==='inferred'?'inferred':'unverified'];
   // "sourced" requires the URL to be among the citations the live search tool actually returned.
   return[t,s,tag==='sourced'&&!live(s)?'inferred':(tag||'inferred')]});
+ if(!out.searched)noSearchScrub(g);
  // Composio-managed claim comes from the server-side lookup only.
  const m=await managedP;
  if(m&&m.managed===true){g.composio=`Yes: Composio lists ${m.label} under "Composio-managed OAuth available" (${MANAGED_URL.replace('.md','')}).`;g.sources.composio=MANAGED_URL.replace('.md','')}
@@ -89,6 +108,6 @@ module.exports=async(req,res)=>{
  else g.composio='Unverified: could not match this app in Composio\'s managed OAuth list; check docs.composio.dev/toolkits/managed-auth.';
  if(!Object.keys(g.sources).length&&out.cites.length)out.cites.slice(0,8).forEach((u,i)=>g.sources['c'+(i+1)]=u);
  g.citations=out.cites.slice(0,20);
- g.generated=new Date().toISOString()+` (${out.label}${out.searched?'':': sources from model memory, tags capped at inferred'}${errs.length?'; fallback after: '+errs.join(' | '):''}; ${((Date.now()-t0)/1000).toFixed(1)}s, not human-reviewed)`;
+ g.generated=new Date().toISOString()+` (${out.label}${out.searched?'':': sources from model memory, tags capped at inferred, time figures labelled unverified model estimate'}${errs.length?'; fallback after: '+errs.join(' | '):''}; ${((Date.now()-t0)/1000).toFixed(1)}s, not human-reviewed)`;
  res.status(200).json(g);
 };

@@ -22,6 +22,7 @@ Shareable guides on how hard it is to create an OAuth app with a given provider 
 - The server enforces a ~50 s provider budget (Vercel limit 60 s) and has CORS enabled. With no key configured it returns 503, and the UI never shows a made-up guide.
 
 ## Limitations
+- **No-search mode (Gemini fallback without grounding):** guides come from model memory. The server post-processes them: approval always reads "Approval time not verified (no live search)"; any time figure is labelled "unverified model estimate (no live search)" and provider-attribution phrasing ("X states...", "according to...") is stripped; any cited URL that does not return HTTP 2xx/3xx when fetched is dropped, and claims without a checked URL are tagged unverified. Tested locally with Miro and Shopify (no xAI key).
 - **No OAuth app was created on any real provider.** Everything is checked against docs only. "Tested" here means the pipeline ran, not that a setup was attempted.
 - On 27 Oct 2026 the xAI key returned 403 because the new team had no credits. The Grok path therefore has **not run end to end yet**. Local tests fell back to Gemini without live search, so tags were capped at "inferred".
 - Some docs, such as shopify.dev, are rendered with JavaScript, so the dead-link and verification fetches can't read their content.
