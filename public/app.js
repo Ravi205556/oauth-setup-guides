@@ -1,5 +1,5 @@
-const STATIC_HOST=/github\.io$/.test(location.hostname)&&!window.GUIDE_API;
-const out=document.getElementById('out');const API=window.GUIDE_API||'/api/generate';
+const BACKEND=window.GENERATE_URL||window.GUIDE_API||"";const STATIC_HOST=/github\.io$/.test(location.hostname)&&!BACKEND;
+const out=document.getElementById('out');const API=BACKEND||'/api/generate';
 const tag=s=>`<span class="tag ${s}">${s}</span>`;
 function src(g,id){return id&&g.sources[id]?` <a href="${g.sources[id]}" target="_blank">[${id}]</a>`:''}
 function render(g,slug){out.innerHTML=`<p><a href="#">← library</a> · Share: <code>${location.href.split('#')[0]}#/guide/${slug}</code></p>
@@ -17,7 +17,7 @@ async function live(q){out.innerHTML=`<p>Agent is investigating <b>${q}</b>… (
  try{if(STATIC_HOST)throw new Error('this static GitHub Pages host has no backend, so live generation is not available here. Use the library guides above');const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app:q})});
   if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||r.status);const g=await r.json();
   const slug='live-'+q.toLowerCase().replace(/[^a-z0-9]+/g,'-');sessionStorage.setItem(slug,JSON.stringify(g));GUIDES[slug]=g;location.hash='/guide/'+slug;
- }catch(e){out.innerHTML=`<h2>Live generation unavailable</h2><p>The live agent backend is not reachable (${e.message}). It needs a deployed <code>/api/generate</code> function with an LLM key. Nothing was generated, so no guide is shown.</p><p><a href="#">← library</a></p>`}}
+ }catch(e){out.innerHTML=`<h2>Live generation unavailable</h2><p>The live agent backend is not reachable (${e.message}). It needs a deployed <code>/api/generate</code> function with GEMINI_API_KEY. Nothing was generated, so no guide is shown.</p><p><a href="#">← library</a></p>`}}
 function route(){const m=location.hash.match(/#\/guide\/(.+)/);if(m){const s=m[1];const g=GUIDES[s]||JSON.parse(sessionStorage.getItem(s)||'null');if(g)return render(g,s)}library()}
 document.getElementById('f').onsubmit=e=>{e.preventDefault();const q=document.getElementById('q').value.trim();if(!q)return;
  const k=Object.keys(GUIDES).find(k=>GUIDES[k].name.toLowerCase().startsWith(q.toLowerCase())||k===q.toLowerCase());k?location.hash='/guide/'+k:live(q)};
